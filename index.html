@@ -9,20 +9,40 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.0.0/dist/aframe-extras.min.js"></script>
     <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/master/three.js/build/ar-threex-location-only.js'></script>
-  </head>
     <script>
       // rotation-sync コンポーネントを定義（モデルの回転を変更しない）
       AFRAME.registerComponent('rotation-sync', {
         tick: function () {
           // ここではカメラの回転情報を取得しますが、モデルには影響を与えません。
           const cameraRotation = this.el.sceneEl.camera.el.getAttribute('rotation');
-          // モデルの回転を変更せずにそのままにしておきます
+        }
+      });
+
+      // ポリゴンオフセット用コンポーネントを定義
+      AFRAME.registerComponent('polygon-offset', {
+        schema: {
+          factor: { type: 'number', default: 1 }, // オフセット係数
+          units: { type: 'number', default: 1 },  // オフセット単位
+        },
+        init: function () {
+          const mesh = this.el.getObject3D('mesh');
+          if (mesh) {
+            mesh.traverse(node => {
+              if (node.isMesh) {
+                node.material.polygonOffset = true;
+                node.material.polygonOffsetFactor = this.data.factor;
+                node.material.polygonOffsetUnits = this.data.units;
+              }
+            });
+          }
         }
       });
     </script>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
+</head>
+<body style="margin: 0; overflow: hidden;">
     <a-scene 
+      antialias="true" 
+      renderer="logarithmicDepthBuffer: true; alpha: true; precision: highp;" 
       vr-mode-ui="enabled: false" 
       embedded 
       arjs="sourceType: webcam; debugUIEnabled: false;">
@@ -30,14 +50,27 @@
       <!-- カメラの設定 -->
       <a-camera gps-camera rotation-sync></a-camera>
 
-      <!-- 3Dモデルを指定された位置に配置。カメラの向きに影響されない -->
+      <!-- 環境光 -->
+      <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light>
+
+      <!-- ディレクショナルライト -->
+      <a-light 
+        type="directional" 
+        position="1 2 0.5" 
+        intensity="0.8" 
+        target="#clock-model" 
+        castShadow="true"></a-light>
+
+      <!-- 3Dモデルにポリゴンオフセットを適用 -->
       <a-entity 
+        id="clock-model"
         gps-entity-place="latitude: 37.95623964531757; longitude: 139.3371717973987" 
         gltf-model="https://raw.githubusercontent.com/ei-pc10/modelmodel/main/%E8%AB%8F%E8%A8%AA%E3%83%8E%E6%A3%AE%E6%99%82%E8%A8%88.glb" 
-        scale="2 2 2" 
+        scale="3 3 3" 
         rotation="0 0 0"
-        look-at="[camera]">
+        look-at="[camera]"
+        polygon-offset="factor: 1; units: 1">
       </a-entity>
     </a-scene>
-  </body>
+</body>
 </html>
